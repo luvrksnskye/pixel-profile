@@ -1,24 +1,29 @@
 ![Pixel Profile](.github/img/card.png)
+
 **Pixel Profile**: Generate pixel art profiles from your GitHub data
 
 > ### 🚀 What's New
 >
-> ### GitHub Actions Integration
+> #### CRT Stats Card
 >
-> We've introduced GitHub Actions support for automatic pre-generation of GitHub stats cards. This means:
+> A brand new retro CRT-style stats card with:
+> - Authentic CRT monitor frame with curved screen effect
+> - Scanlines, RGB shift, and phosphor glow effects
+> - Available via GitHub Actions with `crt_outputs` parameter
 >
-> - Your stats card will always be visible, even in poor network conditions
+> ![CRT Stats Card](./packages/pixel-profile/test/__image_snapshots__/crt-stats-test-ts-crt-stats-render-crt-card-with-include-all-commits-1-snap.png)
+>
+> #### GitHub Actions Integration
+>
+> Pre-generate your stats cards with GitHub Actions for:
+> - Instant visibility, even in poor network conditions
 > - Faster loading times for your GitHub profile
 >
-> **How to use:**
-> 1. Check out our example setup: [LuciNyan's Profile](https://github.com/LuciNyan/LuciNyan)
-> 2. Copy the workflow file to your repository
-> 3. Replace the username with your own
-> 4. Enjoy automatically updated stats cards!
+> **Quick Start:** Check out [LuciNyan's Profile](https://github.com/LuciNyan/LuciNyan) for an example setup.
 
-> 🎉🎉🎉 [Halid](https://github.com/imhalid) has created an awesome [UI](https://github.com/imhalid/pixel-profile-generator) for pixel-profile, which makes it a breeze to edit our own GitHub cards!
+> 🎉 [Halid](https://github.com/imhalid) created an awesome [UI](https://github.com/imhalid/pixel-profile-generator) for pixel-profile!
 >
-> Check it out! ✨ https://pixel-profile-generator.vercel.app
+> Try it out: https://pixel-profile-generator.vercel.app
 
 ## Overview
 
@@ -29,11 +34,11 @@ https://pixel-profile.vercel.app/api/github-stats?username=<username>
 ```
 ![Default Github Stats Card](.github/img/default-github-stats.png)
 
-Of course, you can customize the styling to better suit your preferences. For example, here is a stats card designed for GitHub's Dark Theme::
+Of course, you can customize the styling to better suit your preferences. For example, here is a stats card designed for GitHub's Dark Theme:
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=<username>&screen_effect=true&theme=rainbow
 ```
-This is what it looks like in use in a README:
+This is what it looks like in a README:
 
 ![Demo 1](.github/img/demo-1.png)
 
@@ -120,8 +125,7 @@ https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=lax
 | `screen_effect`       | Enable curved screen effect                                                                                                                           | `false`       |
 | `username`            | GitHub username                                                                                                                                       | ''            |
 | `theme`               | Check out the built-in themes below                                                                                                                   | ''            |
-| `dithering`           | Rendered the image using a 256-color palette with dithering                                                                                           | `false`       |
-
+| `dithering`           | Render the image using a 256-color palette with dithering                                                                                             | `false`       |
 
 ### Hiding individual stats
 
@@ -132,13 +136,83 @@ You can pass a query parameter `&hide=` to hide any specific stats with comma-se
 <!--Replace <username> with your own GitHub username.-->
 https://pixel-profile.vercel.app/api/github-stats?username=<username>&hide=rank
 ```
-![Hiding individual stats](./packages/pixel-profile/test/__image_snapshots__/github-stats-test-ts-packages-pixel-profile-test-github-stats-test-ts-github-stats-render-card-without-rank-with-theme-1-snap.png)
+![Hiding individual stats](./packages/pixel-profile/test/__image_snapshots__/github-stats-test-ts-github-stats-render-card-without-rank-with-theme-1-snap.png)
+
+## GitHub Actions
+
+Pre-generate your stats cards using GitHub Actions for faster loading and reliable availability.
+
+### Basic Usage
+
+Create a workflow file (e.g., `.github/workflows/pixel-profile.yml`):
+
+```yaml
+name: generate-and-upload-card
+
+on:
+  # run automatically every 24 hours
+  schedule:
+    - cron: "0 */24 * * *"
+
+  # allows to manually run the job at any time
+  workflow_dispatch:
+
+  # run on every push on the master branch
+  push:
+    branches:
+      - master
+
+jobs:
+  generate:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: generate github stats card
+        uses: LuciNyan/pixel-profile/action@main
+        with:
+          outputs: |
+            dist/github-stats?username=<username>&screen_effect=false&theme=fuji&dithering=true&hide=avatar
+            dist/github-stats-dark?username=<username>&theme=crt
+          crt_outputs: |
+            dist/github-stats-crt?username=<username>&include_all_commits=true
+            
+      - name: push cards to the output branch
+        uses: crazy-max/ghaction-github-pages@v3.1.0
+        with:
+          target_branch: output
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Action Inputs
+
+| Input          | Description                                      | Required |
+|----------------|--------------------------------------------------|----------|
+| `github_token` | GitHub token for fetching contribution data      | No       |
+| `outputs`      | List of standard stats files to generate         | No       |
+| `crt_outputs`  | List of CRT-style stats files to generate        | No       |
+
+### Output File Options
+
+**For `outputs`** (standard stats card):
+- All options from the [Github Stats Card Options](#github-stats-card-options) table
+- Format: `filename?option1=value1&option2=value2`
+
+**For `crt_outputs`** (CRT stats card):
+- `username`: GitHub username
+- `include_all_commits`: Count all commits (default: `false`)
+- `exclude_repo`: Comma-separated list of repos to exclude
+- Format: `filename?username=<username>&include_all_commits=true`
 
 ## Deploy on your own
 
-The GitHub API has a rate limit of 5k requests per hour. So my https://pixel-profile.vercel.app/api setup could potentially hit that cap. By self-hosting, you eliminate that concern. 
+The GitHub API has a rate limit of 5k requests per hour, so the public https://pixel-profile.vercel.app/api could potentially hit that limit. By self-hosting, you eliminate this concern.
 
-### Deploy on Vercel (Recommend)
+### Deploy on Vercel (Recommended)
 
 #### 1. Creating a Personal Access Token
 To use this tool to retrieve user statistics, you'll need to generate a Personal Access Token (PAT) with the proper scopes.
@@ -208,8 +282,9 @@ docker run -d \
 
 ```
 
-## Contribute
-The layout in this project is entirely done with JSX, so developing it is almost no different than a normal React project. This means anyone can easily create new cards with very little effort. If you have any ideas, feel free to contribute them here! ❤️
+## Contributing
+
+The layout in this project is built entirely with JSX, making development nearly identical to a normal React project. Anyone can easily create new cards with minimal effort. If you have any ideas, feel free to contribute!
 
 ### Running Locally
 Follow these 4 easy steps to get `pixel-profile` running on your local machine:
@@ -233,10 +308,9 @@ PAT_1=xxxxxxx
 pnpm start
 ```
 
-### TODO
-- [X] Github stats card.
-- [ ] Github repo card.
-- [ ] Leetcode stats card.
+### Roadmap
+- [x] GitHub stats card
+- [x] CRT-style stats card
 
 ## Author
 
@@ -257,9 +331,3 @@ pnpm start
 > [Satori](https://github.com/vercel/satori): An enlightened library to convert HTML and CSS to SVG.
 >
 > [Jubilee](https://ko-fi.com/8pxl) A truly unmatched pixel artist! ❤️
-
-## 🏢 Sponsorship
-
-Thanks to the following sponsors for supporting the development of this project:
-
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
