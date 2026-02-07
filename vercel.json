@@ -1,14 +1,15 @@
 {
-  "outputDirectory": ".",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/handle"
+      "src": "api/package.json",
+      "use": "@vercel/node"
     }
   ],
-  "functions": {
-    "api/*.ts": {
-      "maxDuration": 10
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/src/index.ts"
     }
-  }
+  ]
 }
