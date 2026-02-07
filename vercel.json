@@ -1,5 +1,15 @@
 {
-  "buildCommand": "cd api && pnpm build",
-  "installCommand": "pnpm install",
-  "outputDirectory": "api/dist"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/package.json",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/src/index.ts"
+    }
+  ]
 }
